@@ -1,0 +1,31 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A reviewed, source-backed catalogue of African dishes, beginning with Ghana.">
+  <title>{% block title %}African Dishes Knowledge Base{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'dishes/site.css' %}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{% url 'dishes:catalogue' %}">
+      <span aria-hidden="true">AD</span>
+      <strong>African Dishes <small>Knowledge Base</small></strong>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="{% url 'dishes:catalogue' %}">Catalogue</a>
+      <a href="{% url 'admin:index' %}">Curator admin</a>
+      <a href="{% url 'dishes:api_dishes' %}">API</a>
+    </nav>
+  </header>
+
+  {% block content %}{% endblock %}
+
+  <footer>
+    <strong>African Dishes Knowledge Base</strong>
+    <span>Ghana pilot · Evidence before scale</span>
+  </footer>
+</body>
+</html>

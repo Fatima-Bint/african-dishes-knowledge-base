@@ -1,0 +1,53 @@
+{% extends "dishes/base.html" %}
+
+{% block title %}{{ dish.canonical_name }} · African Dishes{% endblock %}
+
+{% block content %}
+<main class="detail-page">
+  <a class="back" href="{% url 'dishes:catalogue' %}">← Back to catalogue</a>
+  <section class="detail-header">
+    <div>
+      <p class="eyebrow">Reviewed public record</p>
+      <h1>{{ dish.canonical_name }}</h1>
+      <p>{{ dish.description }}</p>
+    </div>
+    <dl>
+      <div><dt>Category</dt><dd>{{ record.category|default:"Under review" }}</dd></div>
+      <div><dt>Alternative names</dt><dd>{% for name in record.alternative_names %}{{ name.name }}{% if not forloop.last %}, {% endif %}{% empty %}None reviewed in pilot{% endfor %}</dd></div>
+      <div><dt>Locations</dt><dd>{% for location in record.locations %}{{ location.name }}{% if not forloop.last %}, {% endif %}{% empty %}Under review{% endfor %}</dd></div>
+      <div><dt>Status</dt><dd>Human reviewed</dd></div>
+    </dl>
+  </section>
+
+  <section class="evidence-section">
+    <div class="evidence-intro">
+      <p class="eyebrow">Claim-level provenance</p>
+      <h2>Why this record is public</h2>
+      <p>Each item below identifies the claim, the minimum supporting excerpt, its locator and the source record.</p>
+    </div>
+    <div class="evidence-grid">
+      {% for item in record.evidence %}
+        <article>
+          <span>{{ item.claim_type }}</span>
+          <h3>{{ item.claim.text|default:item.claim }}</h3>
+          <blockquote>{{ item.excerpt }}</blockquote>
+          <dl>
+            <div><dt>Source</dt><dd>{{ item.source.title }}</dd></div>
+            <div><dt>Publisher</dt><dd>{{ item.source.publisher|default:"Not recorded" }}</dd></div>
+            <div><dt>Locator</dt><dd>{{ item.locator|default:"Not recorded" }}</dd></div>
+            <div><dt>Tier</dt><dd>{{ item.source.tier }}</dd></div>
+          </dl>
+          {% if item.source.url %}<a href="{{ item.source.url }}" target="_blank" rel="noreferrer">Open source ↗</a>{% endif %}
+        </article>
+      {% empty %}
+        <div class="empty"><h3>No eligible public evidence.</h3><p>This record should not be published until evidence is reviewed.</p></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <aside class="audit-note">
+    <strong>Public-view rule</strong>
+    <p>This page excludes raw AI output, rejected candidates, pending claims and confidence scores.</p>
+  </aside>
+</main>
+{% endblock %}
