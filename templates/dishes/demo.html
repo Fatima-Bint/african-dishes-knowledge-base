@@ -1,0 +1,66 @@
+{% extends "dishes/base.html" %}
+
+{% block title %}Project Demo | African Dishes Knowledge Base{% endblock %}
+
+{% block content %}
+<main class="demo-page">
+  <section class="demo-hero">
+    <p class="eyebrow">Working project demo</p>
+    <h1>From scattered food data<br><em>to a reviewed public record.</em></h1>
+    <p>
+      Watch how the Ghana pilot discovers a candidate dish, keeps its source attached,
+      sends it for human review and publishes it only after approval.
+    </p>
+  </section>
+
+  <section class="demo-content">
+    <div class="video-frame">
+      {% if video_id %}
+        <iframe
+          src="https://www.youtube-nocookie.com/embed/{{ video_id }}"
+          title="African Dishes Knowledge Base project demonstration"
+          loading="lazy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen>
+        </iframe>
+      {% else %}
+        <div class="video-placeholder">
+          <span aria-hidden="true">▶</span>
+          <h2>Demo video coming soon</h2>
+          <p>The page is ready. Add the unlisted YouTube video ID in Railway to publish the recording.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="demo-actions">
+      <a class="primary-action" href="{% url 'dishes:catalogue' %}#catalogue">Explore the catalogue</a>
+      <a class="secondary-action" href="{% url 'admin:index' %}">Open curator admin</a>
+    </div>
+  </section>
+
+  <section class="demo-steps" aria-labelledby="demo-steps-title">
+    <div class="demo-steps-intro">
+      <p class="eyebrow">What the demonstration shows</p>
+      <h2 id="demo-steps-title">Evidence first. People in control.</h2>
+    </div>
+    <div class="step-grid">
+      <article>
+        <span>01</span>
+        <h3>Discover</h3>
+        <p>Structured information is collected from Wikidata and registered sources as a candidate, not treated as an approved fact.</p>
+      </article>
+      <article>
+        <span>02</span>
+        <h3>Review</h3>
+        <p>A human curator checks the name, evidence, description and possible duplicate matches before making a decision.</p>
+      </article>
+      <article>
+        <span>03</span>
+        <h3>Publish</h3>
+        <p>Only the approved record appears in the public catalogue, with its reviewed evidence and source links still visible.</p>
+      </article>
+    </div>
+  </section>
+</main>
+{% endblock %}

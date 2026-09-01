@@ -10,6 +10,7 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "unsafe-development-key")
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() == "true"
+DEMO_VIDEO_ID = os.getenv("DEMO_VIDEO_ID", "").strip()
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")

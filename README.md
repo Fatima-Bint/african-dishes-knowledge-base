@@ -41,11 +41,15 @@ Open:
 
 - Public catalogue: `http://127.0.0.1:8000/`
 - Curator review workspace: `http://127.0.0.1:8000/admin/`
+- Project demo: `http://127.0.0.1:8000/demo/`
 - JSON API: `http://127.0.0.1:8000/api/dishes/`
 - JSON export: `http://127.0.0.1:8000/exports/dishes.json`
 - CSV export: `http://127.0.0.1:8000/exports/dishes.csv`
 
 The seed command creates a non-login audit user named `demo-curator` to own the demo review decisions. Use the superuser you create to sign in.
+
+To embed the unlisted YouTube recording on the demo page, set `DEMO_VIDEO_ID`
+to the 11-character value after `youtu.be/` or `watch?v=` in the video URL.
 
 ## Run the tests
 

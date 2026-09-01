@@ -1,11 +1,16 @@
 import csv
 import json
+import re
 
+from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 
 from .models import DishCategory, Location
 from .services import public_dishes, serialize_dish
+
+
+YOUTUBE_VIDEO_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
 
 
 def _filters(request):
@@ -37,6 +42,13 @@ def catalogue(request):
             **filters,
         },
     )
+
+
+def demo(request):
+    video_id = settings.DEMO_VIDEO_ID
+    if not YOUTUBE_VIDEO_ID_PATTERN.fullmatch(video_id):
+        video_id = ""
+    return render(request, "dishes/demo.html", {"video_id": video_id})
 
 
 def dish_detail(request, slug):

@@ -47,6 +47,7 @@ The following variables are optional:
 ```text
 GEMINI_API_KEY=<only needed for AI-assisted extraction>
 GEMINI_MODEL=<optional model override>
+DEMO_VIDEO_ID=<11-character ID from the unlisted YouTube URL>
 DJANGO_ALLOWED_HOSTS=<additional comma-separated hostnames>
 DJANGO_CSRF_TRUSTED_ORIGINS=<additional comma-separated HTTPS origins>
 ```
