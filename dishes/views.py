@@ -3,11 +3,13 @@ import json
 import re
 
 from django.conf import settings
+from django.contrib import messages
+from django.contrib.admin.views.decorators import staff_member_required
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import DishCategory, Location
-from .services import public_dishes, serialize_dish
+from .models import CandidateRecord, DishCategory, Location, ReviewDecision
+from .services import approve_candidate_as_new_dish, public_dishes, serialize_dish
 
 
 YOUTUBE_VIDEO_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
@@ -86,6 +88,7 @@ def export_csv(request):
             "category",
             "locations",
             "review_status",
+            "wikidata_id",
             "source_urls",
         ]
     )
@@ -99,6 +102,7 @@ def export_csv(request):
                 record["category"] or "",
                 " | ".join(item["name"] for item in record["locations"]),
                 record["review_status"],
+                record["wikidata_id"] or "",
                 " | ".join(
                     sorted(
                         {
@@ -111,3 +115,120 @@ def export_csv(request):
             ]
         )
     return response
+
+
+def _candidate_value(payload, key):
+    value = payload.get(key)
+    if isinstance(value, dict):
+        return value.get("value") or ""
+    return value or ""
+
+
+def _candidate_alternatives(payload):
+    names = []
+    for item in payload.get("alternative_names") or []:
+        if isinstance(item, dict):
+            value = item.get("name") or item.get("value")
+        else:
+            value = item
+        if value:
+            names.append(str(value).strip())
+    return names
+
+
+@staff_member_required
+def curator_queue(request):
+    candidates = (
+        CandidateRecord.objects.exclude(
+            processing_status=CandidateRecord.ProcessingStatus.DECIDED
+        )
+        .select_related("source")
+        .prefetch_related("source__excerpts", "match_suggestions__proposed_dish")
+        .order_by("-created_at")
+    )
+    return render(request, "dishes/curator_queue.html", {"candidates": candidates})
+
+
+@staff_member_required
+def curator_review(request, candidate_id):
+    candidate = get_object_or_404(
+        CandidateRecord.objects.select_related("source").prefetch_related(
+            "source__excerpts", "match_suggestions__proposed_dish"
+        ),
+        id=candidate_id,
+    )
+    payload = candidate.extracted_payload or {}
+    alternatives = _candidate_alternatives(payload)
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        notes = request.POST.get("notes", "").strip()
+
+        if action == "approve_new":
+            corrected_payload = {
+                "candidate_name": request.POST.get("candidate_name", "").strip(),
+                "description": {
+                    "value": request.POST.get("description", "").strip(),
+                    "evidence": _candidate_value(payload, "description"),
+                },
+                "category": {
+                    "value": request.POST.get("category", "").strip(),
+                    "evidence": _candidate_value(payload, "category"),
+                },
+                "alternative_names": [
+                    {"name": name.strip(), "language_code": "en"}
+                    for name in request.POST.get("alternative_names", "").split(",")
+                    if name.strip()
+                ],
+            }
+            try:
+                dish = approve_candidate_as_new_dish(
+                    candidate,
+                    request.user,
+                    corrected_payload=corrected_payload,
+                    notes=notes,
+                )
+            except ValueError as error:
+                messages.error(request, str(error))
+            else:
+                messages.success(request, f"{dish.canonical_name} is now published.")
+                return redirect("dishes:detail", slug=dish.slug)
+
+        elif action in {"needs_evidence", "reject"}:
+            review_action = (
+                ReviewDecision.Action.NEEDS_EVIDENCE
+                if action == "needs_evidence"
+                else ReviewDecision.Action.REJECT
+            )
+            ReviewDecision.objects.create(
+                candidate=candidate,
+                reviewer=request.user,
+                action=review_action,
+                notes=notes,
+                corrected_payload=payload,
+            )
+            candidate.processing_status = (
+                CandidateRecord.ProcessingStatus.IN_REVIEW
+                if action == "needs_evidence"
+                else CandidateRecord.ProcessingStatus.DECIDED
+            )
+            candidate.save(update_fields=["processing_status", "updated_at"])
+            messages.success(request, "The candidate decision was recorded.")
+            return redirect("dishes:curator_queue")
+        else:
+            messages.error(request, "Choose a review action.")
+
+    return render(
+        request,
+        "dishes/curator_review.html",
+        {
+            "candidate": candidate,
+            "payload": payload,
+            "alternatives": ", ".join(alternatives),
+            "candidate_name": payload.get("candidate_name", ""),
+            "description": _candidate_value(payload, "description"),
+            "category": _candidate_value(payload, "category"),
+            "matches": candidate.match_suggestions.all(),
+            "excerpts": candidate.source.excerpts.all(),
+        },
+    )

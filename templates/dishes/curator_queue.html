@@ -1,0 +1,47 @@
+{% extends "dishes/base.html" %}
+
+{% block title %}Review queue · African Dishes{% endblock %}
+
+{% block content %}
+<main class="curator-page">
+  <section class="curator-hero">
+    <p class="eyebrow">Human review workspace</p>
+    <h1>From structured candidate<br><em>to public record.</em></h1>
+    <p>Wikidata supplies structured discovery. A reviewer checks the entity, evidence and match before publication.</p>
+  </section>
+
+  <section class="curator-content">
+    <div class="catalogue-heading">
+      <div>
+        <p class="eyebrow">Candidate queue</p>
+        <h2>{{ candidates|length }} waiting for a decision</h2>
+      </div>
+      <a class="button-link" href="{% url 'admin:index' %}">Open full admin ↗</a>
+    </div>
+
+    {% if candidates %}
+      <div class="candidate-list">
+        {% for candidate in candidates %}
+          <article class="candidate-card">
+            <div class="candidate-card-top">
+              <span class="status-pill">{{ candidate.get_processing_status_display }}</span>
+              <span class="candidate-source">{{ candidate.source.get_source_type_display }} · Tier {{ candidate.source.source_tier }}</span>
+            </div>
+            <h3>{{ candidate.extracted_payload.candidate_name|default:"Unnamed candidate" }}</h3>
+            <p>{{ candidate.source.title }}</p>
+            {% if candidate.extracted_payload.wikidata_id %}
+              <a href="https://www.wikidata.org/wiki/{{ candidate.extracted_payload.wikidata_id }}" target="_blank" rel="noreferrer">{{ candidate.extracted_payload.wikidata_id }} on Wikidata ↗</a>
+            {% endif %}
+            <a class="inspect" href="{% url 'dishes:curator_review' candidate.id %}">Review candidate →</a>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">
+        <h3>The review queue is clear.</h3>
+        <p>Run a structured Wikidata ingestion and generate a match suggestion to create the next candidate.</p>
+      </div>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

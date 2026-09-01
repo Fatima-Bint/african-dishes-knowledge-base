@@ -52,3 +52,24 @@ python manage.py runserver
 ```
 
 Then open `http://127.0.0.1:8000/`.
+
+## Optional Wikidata workflow demo
+
+Use this after showing the 12-record pilot to demonstrate the repeatable
+collection path for future records:
+
+```bash
+python manage.py discover_wikidata --limit 5 --ingest
+python manage.py suggest_matches <candidate-id>
+```
+
+Open `http://127.0.0.1:8000/curator/` and narrate:
+
+1. Wikidata's structured query proposes Ghana-linked dish entities.
+2. The selected QID, label, aliases and description are stored as a hidden candidate.
+3. The deterministic matcher proposes whether it may be new or already present.
+4. A human edits or rejects the proposed public fields and records a note.
+5. Only approval creates the published dish, with the Wikidata link retained.
+
+The review page intentionally calls out what Wikidata does not prove: a label
+or alias is not, by itself, evidence of cultural origin or equivalence.

@@ -17,9 +17,15 @@
     <nav aria-label="Primary navigation">
       <a href="{% url 'dishes:catalogue' %}#catalogue">Catalogue</a>
       <a href="{% url 'dishes:demo' %}">Demo</a>
-      <a href="{% url 'admin:index' %}">Curator admin</a>
+      <a href="{% url 'admin:index' %}">Admin</a>
     </nav>
   </header>
+
+  {% if messages %}
+    <div class="messages" aria-live="polite">
+      {% for message in messages %}<div class="message {{ message.tags }}">{{ message }}</div>{% endfor %}
+    </div>
+  {% endif %}
 
   {% block content %}{% endblock %}
 

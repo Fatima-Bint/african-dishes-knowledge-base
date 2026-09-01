@@ -12,4 +12,10 @@ urlpatterns = [
     path("api/dishes/", views.api_dishes, name="api_dishes"),
     path("exports/dishes.json", views.export_json, name="export_json"),
     path("exports/dishes.csv", views.export_csv, name="export_csv"),
+    path("curator/", views.curator_queue, name="curator_queue"),
+    path(
+        "curator/candidates/<uuid:candidate_id>/",
+        views.curator_review,
+        name="curator_review",
+    ),
 ]

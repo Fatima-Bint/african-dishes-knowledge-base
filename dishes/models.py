@@ -82,6 +82,7 @@ class Dish(TimestampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     canonical_name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True, blank=True)
+    wikidata_id = models.CharField(max_length=24, null=True, blank=True, unique=True)
     description = models.TextField(blank=True)
     category = models.ForeignKey(
         DishCategory,

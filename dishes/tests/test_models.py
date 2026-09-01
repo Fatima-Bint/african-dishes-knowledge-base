@@ -89,3 +89,9 @@ class FoundationModelTests(TestCase):
 
         self.assertEqual(decision.reviewer, reviewer)
         self.assertEqual(decision.action, ReviewDecision.Action.NEEDS_EVIDENCE)
+
+    def test_wikidata_id_is_unique_when_present(self):
+        Dish.objects.create(canonical_name="First dish", wikidata_id="Q123")
+
+        with self.assertRaises(IntegrityError), transaction.atomic():
+            Dish.objects.create(canonical_name="Second dish", wikidata_id="Q123")

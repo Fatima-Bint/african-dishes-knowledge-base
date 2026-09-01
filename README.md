@@ -18,6 +18,7 @@ This is not yet a recipe, calorie, fitness, or medical app. Those layers are del
 - JSON API plus JSON and CSV downloads.
 - A curator admin with auditable human-review actions.
 - Structured Wikidata ingestion for exact entity IDs.
+- Wikidata discovery for Ghana-linked dish entities via the Wikidata Query Service.
 - Optional schema-constrained Gemini extraction from bounded source text.
 - A deterministic name-matching baseline that runs before approval.
 - An idempotent 12-record Ghana demo seed and automated tests.
@@ -61,14 +62,31 @@ python manage.py test
 
 ### Route A: structured discovery with Wikidata
 
-Use an exact QID so the command never guesses which entity you meant.
+Start with the structured discovery query. It finds items typed as a dish and
+linked to Ghana through a country-of-origin or indigenous-to statement. The
+query only proposes candidates; it does not publish anything.
 
 ```bash
-python manage.py ingest_wikidata Q12345
+python manage.py discover_wikidata --limit 12
+```
+
+Select the QIDs that look relevant, then register those exact entities:
+
+```bash
+python manage.py ingest_wikidata Q12345 Q67890
 python manage.py suggest_matches <candidate-id>
 ```
 
-Then open the candidate in Admin. Inspect the source, structured payload and match suggestions before choosing a review action.
+You can also register the discovery results in one step for a demo:
+
+```bash
+python manage.py discover_wikidata --limit 5 --ingest
+```
+
+Then open `/curator/`. Inspect the QID, captured structured fields, evidence
+excerpt and deterministic match suggestion before choosing a review action.
+Wikidata labels and aliases alone do not establish cultural origin or name
+equivalence.
 
 ### Route B: bounded extraction with Gemini
 
@@ -84,7 +102,7 @@ Gemini requires `GEMINI_API_KEY` and optionally `GEMINI_MODEL` in `.env`. The mo
 
 ### Human approval
 
-In Admin:
+In the review queue or Admin:
 
 1. Open **Candidate records** and inspect the source, excerpt, payload, validation result, and proposed matches.
 2. Move the candidate into review or request stronger evidence.

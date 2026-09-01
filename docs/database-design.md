@@ -41,12 +41,15 @@ Key fields:
 - UUID primary key
 - Canonical display name
 - Slug
+- Optional Wikidata QID, retained as a structured reference after review
 - Neutral reviewed description
 - Category
 - Publication status
 - Created and updated timestamps
 
 The canonical display name is not assumed to be the historically original name. It is the preferred label for the current interface.
+The Wikidata QID is an identity link, not automatic proof of cultural origin,
+name equivalence, or publication eligibility.
 
 ### DishName
 

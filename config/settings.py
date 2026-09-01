@@ -10,7 +10,6 @@ load_dotenv(BASE_DIR / ".env")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "unsafe-development-key")
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() == "true"
-DEMO_VIDEO_ID = os.getenv("DEMO_VIDEO_ID", "").strip()
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
@@ -32,6 +31,9 @@ if RAILWAY_PUBLIC_DOMAIN:
     railway_origin = f"https://{RAILWAY_PUBLIC_DOMAIN}"
     if railway_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(railway_origin)
+
+# The public demo page embeds an unlisted YouTube video when this ID is set.
+DEMO_VIDEO_ID = os.getenv("DEMO_VIDEO_ID", "").strip()
 
 INSTALLED_APPS = [
     "django.contrib.admin",

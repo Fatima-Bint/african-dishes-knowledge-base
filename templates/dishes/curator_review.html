@@ -1,0 +1,73 @@
+{% extends "dishes/base.html" %}
+
+{% block title %}Review {{ candidate.extracted_payload.candidate_name|default:"candidate" }} · African Dishes{% endblock %}
+
+{% block content %}
+<main class="curator-page">
+  <section class="curator-content review-layout">
+    <a class="back" href="{% url 'dishes:curator_queue' %}">← Back to review queue</a>
+    <div class="review-heading">
+      <div>
+        <p class="eyebrow">Human review · {{ candidate.get_processing_status_display }}</p>
+        <h1>{{ candidate.extracted_payload.candidate_name|default:"Unnamed candidate" }}</h1>
+        <p class="review-intro">This is a proposed record. Nothing on this page is public until you approve it.</p>
+      </div>
+      {% if payload.wikidata_id %}
+        <a class="button-link" href="https://www.wikidata.org/wiki/{{ payload.wikidata_id }}" target="_blank" rel="noreferrer">Inspect {{ payload.wikidata_id }} on Wikidata ↗</a>
+      {% endif %}
+    </div>
+
+    <div class="review-grid">
+      <section class="review-panel">
+        <p class="eyebrow">Structured proposal</p>
+        <dl class="review-facts">
+          <div><dt>Source</dt><dd>{{ candidate.source.title }}</dd></div>
+          <div><dt>Retrieved</dt><dd>{{ candidate.source.retrieved_at|date:"Y-m-d H:i" }} UTC</dd></div>
+          <div><dt>Wikidata QID</dt><dd>{{ payload.wikidata_id|default:"Not supplied" }}</dd></div>
+          <div><dt>English Wikipedia</dt><dd>{{ payload.english_wikipedia_title|default:"Not supplied" }}</dd></div>
+        </dl>
+
+        <h2>Evidence captured</h2>
+        {% for excerpt in excerpts %}
+          <blockquote>{{ excerpt.text }}</blockquote>
+          <p class="muted">Locator: {{ excerpt.locator|default:"Not recorded" }}</p>
+        {% empty %}
+          <p class="muted">No evidence excerpt is attached. Do not publish this candidate.</p>
+        {% endfor %}
+
+        <h2>Match suggestions</h2>
+        {% for match in matches %}
+          <div class="match-row">
+            <strong>{{ match.get_proposed_decision_display }}</strong>
+            {% if match.proposed_dish %}<span>{{ match.proposed_dish.canonical_name }}</span>{% else %}<span>No existing dish</span>{% endif %}
+            <small>score {{ match.deterministic_score|default:"0" }}</small>
+          </div>
+          <p class="muted">{{ match.rationale }}</p>
+        {% empty %}
+          <p class="muted">No match suggestion yet. Run <code>suggest_matches</code> before publication.</p>
+        {% endfor %}
+      </section>
+
+      <section class="review-panel approval-panel">
+        <p class="eyebrow">Reviewer decision</p>
+        <h2>Edit the proposed public fields</h2>
+        <p class="muted">Only the values you approve below will become a public dish record. Wikidata labels and aliases do not prove cultural origin or equivalence by themselves.</p>
+
+        <form method="post">
+          {% csrf_token %}
+          <label>Canonical name<input name="candidate_name" value="{{ candidate_name }}" required></label>
+          <label>Description<textarea name="description" rows="5">{{ description }}</textarea></label>
+          <label>Category<input name="category" value="{{ category }}" placeholder="Leave blank if not established"></label>
+          <label>Alternative names<input name="alternative_names" value="{{ alternatives }}" placeholder="Comma-separated; leave blank if unconfirmed"></label>
+          <label>Reviewer note<textarea name="notes" rows="4" placeholder="What did you verify or leave unresolved?"></textarea></label>
+          <div class="decision-actions">
+            <button class="primary-action" type="submit" name="action" value="approve_new">Approve and publish</button>
+            <button class="secondary-action" type="submit" name="action" value="needs_evidence">Request more evidence</button>
+            <button class="quiet-action" type="submit" name="action" value="reject">Reject candidate</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </section>
+</main>
+{% endblock %}

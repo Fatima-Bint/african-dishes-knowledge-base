@@ -16,6 +16,7 @@
       <div><dt>Alternative names</dt><dd>{% for name in record.alternative_names %}{{ name.name }}{% if not forloop.last %}, {% endif %}{% empty %}None reviewed in pilot{% endfor %}</dd></div>
       <div><dt>Locations</dt><dd>{% for location in record.locations %}{{ location.name }}{% if not forloop.last %}, {% endif %}{% empty %}Under review{% endfor %}</dd></div>
       <div><dt>Status</dt><dd>Human reviewed</dd></div>
+      {% if record.wikidata_id %}<div><dt>Structured reference</dt><dd><a href="{{ record.wikidata_url }}" target="_blank" rel="noreferrer">{{ record.wikidata_id }} on Wikidata ↗</a></dd></div>{% endif %}
     </dl>
   </section>
 
