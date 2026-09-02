@@ -3,11 +3,11 @@
 {% block content %}
 <main>
   <section class="catalogue-hero">
-    <!-- <p class="eyebrow">Ghana pilot · Working Django demo</p> -->
+    <p class="eyebrow">African food culture</p>
     <h1>Food is memory.<br><em>Let&apos;s preserve it.</em></h1>
     <p>
-      Explore human-reviewed dish records whose names, associations and descriptions remain linked
-      to their supporting evidence.
+      Explore human-reviewed records documenting Ghanaian dishes, their names, descriptions,
+      categories and places.
     </p>
   </section>
 
@@ -17,10 +17,12 @@
         <p class="eyebrow">Public catalogue</p>
         <h2>Reviewed records only</h2>
       </div>
-      <div class="exports">
-        <a href="{% url 'dishes:export_json' %}?{{ request.GET.urlencode }}">Download JSON</a>
-        <a href="{% url 'dishes:export_csv' %}?{{ request.GET.urlencode }}">Download CSV</a>
-      </div>
+      {% if request.user.is_staff %}
+        <div class="exports" aria-label="Staff downloads">
+          <a href="{% url 'dishes:export_json' %}{% if query or location or category %}?q={{ query|urlencode }}&amp;location={{ location|urlencode }}&amp;category={{ category|urlencode }}{% endif %}">Download JSON</a>
+          <a href="{% url 'dishes:export_csv' %}{% if query or location or category %}?q={{ query|urlencode }}&amp;location={{ location|urlencode }}&amp;category={{ category|urlencode }}{% endif %}">Download CSV</a>
+        </div>
+      {% endif %}
     </div>
 
     <form class="filters" method="get" role="search">
@@ -56,6 +58,7 @@
       <div class="dish-grid">
         {% for dish in dishes %}
           <article class="dish-card">
+            {% if dish.image_url %}<img class="dish-card-image" src="{{ dish.image_url }}" alt="{{ dish.image_caption|default:dish.canonical_name }}">{% endif %}
             <div class="card-meta"><span>{{ dish.category|default:"Uncategorised" }}</span><b>✓ reviewed</b></div>
             <p class="location">
               {% for link in dish.locations.all %}{{ link.location.name }}{% if not forloop.last %} · {% endif %}{% empty %}Location under review{% endfor %}
@@ -67,7 +70,7 @@
               {% empty %}No reviewed alternative name in this pilot{% endfor %}
             </p>
             <p>{{ dish.description }}</p>
-            <a class="inspect" href="{% url 'dishes:detail' dish.slug %}">Inspect evidence →</a>
+            <a class="inspect" href="{% url 'dishes:detail' dish.slug %}">View dish →</a>
           </article>
         {% endfor %}
       </div>

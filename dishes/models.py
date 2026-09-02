@@ -84,6 +84,11 @@ class Dish(TimestampedModel):
     slug = models.SlugField(max_length=220, unique=True, blank=True)
     wikidata_id = models.CharField(max_length=24, null=True, blank=True, unique=True)
     description = models.TextField(blank=True)
+    image_url = models.URLField(max_length=1000, blank=True)
+    image_caption = models.CharField(max_length=300, blank=True)
+    image_credit = models.CharField(max_length=255, blank=True)
+    image_license = models.CharField(max_length=120, blank=True)
+    image_source_url = models.URLField(max_length=1000, blank=True)
     category = models.ForeignKey(
         DishCategory,
         null=True,

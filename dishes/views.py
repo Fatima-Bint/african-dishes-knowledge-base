@@ -58,15 +58,22 @@ def dish_detail(request, slug):
     return render(
         request,
         "dishes/detail.html",
-        {"dish": dish, "record": serialize_dish(dish)},
+        {
+            "dish": dish,
+            "record": serialize_dish(dish, include_evidence=request.user.is_staff),
+        },
     )
 
 
 def api_dishes(request):
-    records = [serialize_dish(dish) for dish in public_dishes(**_filters(request))]
+    records = [
+        serialize_dish(dish, include_evidence=request.user.is_staff)
+        for dish in public_dishes(**_filters(request))
+    ]
     return JsonResponse({"count": len(records), "results": records})
 
 
+@staff_member_required
 def export_json(request):
     records = [serialize_dish(dish) for dish in public_dishes(**_filters(request))]
     response = HttpResponse(
@@ -77,6 +84,7 @@ def export_json(request):
     return response
 
 
+@staff_member_required
 def export_csv(request):
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = 'attachment; filename="ghana-dishes-pilot.csv"'

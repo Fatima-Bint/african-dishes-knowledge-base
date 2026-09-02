@@ -11,17 +11,19 @@ This is not yet a recipe, calorie, fitness, or medical app. Those layers are del
 ## What now works
 
 - A Django data model for dishes, alternative names, locations, relationships, sources, evidence excerpts, claims, AI candidates, match suggestions, and review decisions.
-- A public catalogue that excludes draft and unreviewed records.
+- A public catalogue that excludes draft and unreviewed records. Visitors see the approved record; staff users can reveal its review evidence and sources after signing in.
 - Search across canonical and alternative names.
 - Location and category filters.
-- Dish pages with claim-level provenance and source links.
+- Staff-only dish-page views with claim-level provenance and source links.
 - JSON API plus JSON and CSV downloads.
 - A curator admin with auditable human-review actions.
-- Structured Wikidata ingestion for exact entity IDs.
+- Structured Wikidata ingestion for exact entity IDs, including proposed Wikimedia Commons images when available.
 - Wikidata discovery for Ghana-linked dish entities via the Wikidata Query Service.
 - Optional schema-constrained Gemini extraction from bounded source text.
 - A deterministic name-matching baseline that runs before approval.
 - An idempotent 12-record Ghana demo seed and automated tests.
+- Controlled category choices and reviewer-editable locations, images and proposal fields in Admin.
+- JSON and CSV exports restricted to staff users.
 
 ## Quick start
 
@@ -44,10 +46,18 @@ Open:
 - Curator review workspace: `http://127.0.0.1:8000/admin/`
 - Project demo: `http://127.0.0.1:8000/demo/`
 - JSON API: `http://127.0.0.1:8000/api/dishes/`
-- JSON export: `http://127.0.0.1:8000/exports/dishes.json`
-- CSV export: `http://127.0.0.1:8000/exports/dishes.csv`
+- JSON export (staff login required): `http://127.0.0.1:8000/admin/exports/dishes.json`
+- CSV export (staff login required): `http://127.0.0.1:8000/admin/exports/dishes.csv`
 
 The seed command creates a non-login audit user named `demo-curator` to own the demo review decisions. Use the superuser you create to sign in.
+
+The public catalogue intentionally presents only the approved dish identity, description, category,
+locations, alternative names and approved image. When a staff user is logged in, the frontend also
+reveals the approved evidence trail and download buttons. Raw candidate payloads, review history and
+editing controls remain inside the authenticated Admin workflow at `/admin/`.
+
+Excel/CSV ingestion is a planned future input adapter. It will create review-only candidates from
+spreadsheet rows rather than publishing rows directly.
 
 To embed the unlisted YouTube recording on the demo page, set `DEMO_VIDEO_ID`
 to the 11-character value after `youtu.be/` or `watch?v=` in the video URL.
@@ -83,8 +93,8 @@ You can also register the discovery results in one step for a demo:
 python manage.py discover_wikidata --limit 5 --ingest
 ```
 
-Then open `/curator/`. Inspect the QID, captured structured fields, evidence
-excerpt and deterministic match suggestion before choosing a review action.
+Then open `/admin/`. In **Candidate records**, inspect the QID, captured structured fields,
+evidence excerpt and deterministic match suggestion before choosing a review action.
 Wikidata labels and aliases alone do not establish cultural origin or name
 equivalence.
 

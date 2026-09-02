@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="A reviewed, source-backed catalogue of African dishes, beginning with Ghana.">
+  <meta name="description" content="A human-reviewed catalogue preserving Ghanaian dishes, names and food traditions.">
   <title>{% block title %}African Dishes Knowledge Base{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'dishes/site.css' %}">
 </head>
@@ -17,7 +17,6 @@
     <nav aria-label="Primary navigation">
       <a href="{% url 'dishes:catalogue' %}#catalogue">Catalogue</a>
       <a href="{% url 'dishes:demo' %}">Demo</a>
-      <a href="{% url 'admin:index' %}">Admin</a>
     </nav>
   </header>
 
@@ -31,7 +30,6 @@
 
   <footer>
     <strong>African Dishes Knowledge Base</strong>
-    <span>Ghana pilot · Evidence before scale</span>
   </footer>
 </body>
 </html>

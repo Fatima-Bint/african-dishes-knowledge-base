@@ -7,6 +7,7 @@
   <a class="back" href="{% url 'dishes:catalogue' %}">← Back to catalogue</a>
   <section class="detail-header">
     <div>
+      {% if record.image %}<figure class="dish-detail-image"><img src="{{ record.image.url }}" alt="{{ record.image.caption|default:dish.canonical_name }}">{% if record.image.credit %}<figcaption>Image: {{ record.image.credit }}{% if record.image.license %} · {{ record.image.license }}{% endif %}</figcaption>{% endif %}</figure>{% endif %}
       <p class="eyebrow">Reviewed public record</p>
       <h1>{{ dish.canonical_name }}</h1>
       <p>{{ dish.description }}</p>
@@ -16,39 +17,34 @@
       <div><dt>Alternative names</dt><dd>{% for name in record.alternative_names %}{{ name.name }}{% if not forloop.last %}, {% endif %}{% empty %}None reviewed in pilot{% endfor %}</dd></div>
       <div><dt>Locations</dt><dd>{% for location in record.locations %}{{ location.name }}{% if not forloop.last %}, {% endif %}{% empty %}Under review{% endfor %}</dd></div>
       <div><dt>Status</dt><dd>Human reviewed</dd></div>
-      {% if record.wikidata_id %}<div><dt>Structured reference</dt><dd><a href="{{ record.wikidata_url }}" target="_blank" rel="noreferrer">{{ record.wikidata_id }} on Wikidata ↗</a></dd></div>{% endif %}
     </dl>
   </section>
 
-  <section class="evidence-section">
-    <div class="evidence-intro">
-      <p class="eyebrow">Claim-level provenance</p>
-      <h2>Why this record is public</h2>
-      <p>Each item below identifies the claim, the minimum supporting excerpt, its locator and the source record.</p>
-    </div>
-    <div class="evidence-grid">
-      {% for item in record.evidence %}
-        <article>
-          <span>{{ item.claim_type }}</span>
-          <h3>{{ item.claim.text|default:item.claim }}</h3>
-          <blockquote>{{ item.excerpt }}</blockquote>
-          <dl>
-            <div><dt>Source</dt><dd>{{ item.source.title }}</dd></div>
-            <div><dt>Publisher</dt><dd>{{ item.source.publisher|default:"Not recorded" }}</dd></div>
-            <div><dt>Locator</dt><dd>{{ item.locator|default:"Not recorded" }}</dd></div>
-            <div><dt>Tier</dt><dd>{{ item.source.tier }}</dd></div>
-          </dl>
-          {% if item.source.url %}<a href="{{ item.source.url }}" target="_blank" rel="noreferrer">Open source ↗</a>{% endif %}
-        </article>
-      {% empty %}
-        <div class="empty"><h3>No eligible public evidence.</h3><p>This record should not be published until evidence is reviewed.</p></div>
-      {% endfor %}
-    </div>
-  </section>
-
-  <aside class="audit-note">
-    <strong>Public-view rule</strong>
-    <p>This page excludes raw AI output, rejected candidates, pending claims and confidence scores.</p>
-  </aside>
+  {% if request.user.is_staff %}
+    <section class="evidence-section" aria-labelledby="evidence-title">
+      <div class="evidence-intro">
+        <p class="eyebrow">Staff-only review view</p>
+        <h2 id="evidence-title">Evidence and sources</h2>
+        <p>This review material is visible only while you are signed in as a staff user. Visitors see the approved dish record without the internal evidence trail.</p>
+      </div>
+      <div class="evidence-grid">
+        {% for item in record.evidence %}
+          <article>
+            <span>{{ item.claim_type }}</span>
+            <h3>{{ item.source.title }}</h3>
+            <blockquote>{{ item.excerpt }}</blockquote>
+            <dl>
+              <div><dt>Publisher</dt><dd>{{ item.source.publisher|default:"Not recorded" }}</dd></div>
+              <div><dt>Locator</dt><dd>{{ item.locator|default:"Not recorded" }}</dd></div>
+              <div><dt>Source tier</dt><dd>{{ item.source.tier|default:"Not recorded" }}</dd></div>
+            </dl>
+            {% if item.source.url %}<a href="{{ item.source.url }}" target="_blank" rel="noreferrer">Open source ↗</a>{% endif %}
+          </article>
+        {% empty %}
+          <article><p class="muted">No evidence has been recorded for this approved dish.</p></article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
 </main>
 {% endblock %}

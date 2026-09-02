@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from dishes.demo_data import DISHES, SOURCES
+from dishes.category_data import LEGACY_CATEGORY_MAP
 from dishes.models import (
     CandidateRecord,
     Dish,
@@ -53,7 +54,8 @@ class Command(BaseCommand):
 
         created_count = 0
         for item in DISHES:
-            category, _ = DishCategory.objects.get_or_create(name=item["category"])
+            category_name = LEGACY_CATEGORY_MAP.get(item["category"], item["category"])
+            category, _ = DishCategory.objects.get_or_create(name=category_name)
             if item["location"] == "Ghana":
                 location = ghana
             else:

@@ -51,6 +51,7 @@ a { color: inherit; text-decoration: none; }
 
 .dish-grid { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
 .dish-card { display: flex; min-height: 345px; flex-direction: column; padding: 26px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(255,250,240,.5); }
+.dish-card-image { width: calc(100% + 52px); height: 170px; margin: -26px -26px 22px; object-fit: cover; }
 .card-meta { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: var(--muted); font-size: 9px; text-transform: uppercase; }
 .card-meta b { padding: 5px 8px; border-radius: 99px; background: #dbe8d5; color: #24512f; }
 .location { margin: 38px 0 8px; color: var(--clay); font-size: 10px; font-weight: 850; letter-spacing: .12em; text-transform: uppercase; }
@@ -67,6 +68,9 @@ a { color: inherit; text-decoration: none; }
 .detail-header { display: grid; grid-template-columns: 1fr .75fr; gap: clamp(45px, 8vw, 120px); padding-bottom: 55px; border-bottom: 1px solid var(--line); }
 .detail-header h1 { font-size: clamp(58px, 7vw, 92px); }
 .detail-header > div > p:last-child { max-width: 620px; color: var(--muted); font-size: 17px; line-height: 1.7; }
+.dish-detail-image { margin: 0 0 28px; }
+.dish-detail-image img { display: block; width: 100%; max-height: 390px; object-fit: cover; }
+.dish-detail-image figcaption { margin-top: 8px; color: var(--muted); font-size: 10px; }
 .detail-header dl { display: grid; grid-template-columns: 1fr 1fr; margin: 0; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
 .detail-header dl div { min-height: 110px; padding: 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 dt { color: var(--clay); font-size: 9px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }

@@ -2,7 +2,8 @@ import copy
 
 from django import forms
 
-from .models import CandidateRecord
+from .category_data import CONTROLLED_CATEGORIES
+from .models import CandidateRecord, DishCategory, DishLocation, Location
 
 
 def _payload_value(payload, key):
@@ -37,11 +38,32 @@ class CandidateRecordReviewForm(forms.ModelForm):
         widget=forms.Textarea,
         help_text="Use only what the evidence supports.",
     )
-    category = forms.CharField(
+    category = forms.ChoiceField(
+        choices=(),
         required=False,
-        max_length=100,
-        help_text="Leave blank when the category is not established.",
+        help_text="Choose a predefined category. Add categories in Admin only.",
     )
+    location = forms.ModelChoiceField(
+        queryset=Location.objects.none(),
+        required=False,
+        empty_label="— Not established —",
+        help_text="Choose an existing country, region, locality or community.",
+    )
+    location_relationship = forms.ChoiceField(
+        choices=[("", "— Not established —")] + list(DishLocation.Relationship.choices),
+        required=False,
+        label="Location relationship",
+        help_text="Use 'claimed origin' only when the evidence supports that wording.",
+    )
+    image_url = forms.URLField(
+        required=False,
+        label="Proposed image URL",
+        help_text="Optional. Publish only images with a clear source and reuse permission.",
+    )
+    image_caption = forms.CharField(required=False, max_length=300)
+    image_credit = forms.CharField(required=False, max_length=255)
+    image_license = forms.CharField(required=False, max_length=120)
+    image_source_url = forms.URLField(required=False, label="Image source URL")
     alternative_names = forms.CharField(
         required=False,
         widget=forms.TextInput,
@@ -54,10 +76,26 @@ class CandidateRecordReviewForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["category"].choices = [("", "— Not established —")] + [
+            (name, name) for name in CONTROLLED_CATEGORIES
+        ]
+        self.fields["location"].queryset = Location.objects.order_by("name")
         payload = self.instance.extracted_payload or {}
         self.fields["candidate_name"].initial = payload.get("candidate_name", "")
         self.fields["description"].initial = _payload_value(payload, "description")
         self.fields["category"].initial = _payload_value(payload, "category")
+        self.fields["location"].initial = Location.objects.filter(
+            name=_payload_value(payload, "location")
+        ).first()
+        self.fields["location_relationship"].initial = payload.get(
+            "location_relationship", "associated_with"
+        )
+        image = payload.get("image") or {}
+        self.fields["image_url"].initial = image.get("url", "")
+        self.fields["image_caption"].initial = image.get("caption", "")
+        self.fields["image_credit"].initial = image.get("credit", "")
+        self.fields["image_license"].initial = image.get("license", "")
+        self.fields["image_source_url"].initial = image.get("source_url", "")
         self.fields["alternative_names"].initial = ", ".join(
             _payload_alternatives(payload)
         )
@@ -76,8 +114,9 @@ class CandidateRecordReviewForm(forms.ModelForm):
                 else ""
             ),
         }
+        category = self.cleaned_data["category"].strip()
         payload["category"] = {
-            "value": self.cleaned_data["category"].strip(),
+            "value": category,
             "evidence": (
                 original_category.get("evidence", "")
                 if isinstance(original_category, dict)
@@ -89,6 +128,16 @@ class CandidateRecordReviewForm(forms.ModelForm):
             for name in self.cleaned_data["alternative_names"].split(",")
             if name.strip()
         ]
+        location = self.cleaned_data["location"]
+        payload["location"] = location.name if location else ""
+        payload["location_relationship"] = self.cleaned_data["location_relationship"]
+        payload["image"] = {
+            "url": self.cleaned_data["image_url"].strip(),
+            "caption": self.cleaned_data["image_caption"].strip(),
+            "credit": self.cleaned_data["image_credit"].strip(),
+            "license": self.cleaned_data["image_license"].strip(),
+            "source_url": self.cleaned_data["image_source_url"].strip(),
+        }
         candidate.extracted_payload = payload
         if commit:
             candidate.save()

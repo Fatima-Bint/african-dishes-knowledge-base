@@ -12,6 +12,7 @@ from .models import (
     DishLocation,
     DishName,
     DishCategory,
+    Location,
     ReviewDecision,
     ReviewStatus,
 )
@@ -77,6 +78,13 @@ def approve_candidate_as_new_dish(candidate, reviewer, corrected_payload=None, n
 
     description = str(_payload_value(payload, "description") or "").strip()
     category_name = str(_payload_value(payload, "category") or "").strip()
+    location_name = str(_payload_value(payload, "location") or "").strip()
+    location_relationship = str(
+        payload.get("location_relationship") or DishLocation.Relationship.ASSOCIATED_WITH
+    )
+    if location_relationship not in DishLocation.Relationship.values:
+        location_relationship = DishLocation.Relationship.ASSOCIATED_WITH
+    image = payload.get("image") or {}
     alternatives = []
     seen_names = {normalize_name(name)}
     for alternative in _payload_alternatives(payload):
@@ -96,6 +104,11 @@ def approve_candidate_as_new_dish(candidate, reviewer, corrected_payload=None, n
             wikidata_id=wikidata_id,
             description=description,
             category=category,
+            image_url=str(image.get("url") or "").strip(),
+            image_caption=str(image.get("caption") or "").strip(),
+            image_credit=str(image.get("credit") or "").strip(),
+            image_license=str(image.get("license") or "").strip(),
+            image_source_url=str(image.get("source_url") or "").strip(),
             publication_status=Dish.PublicationStatus.PUBLISHED,
         )
         DishName.objects.create(
@@ -128,6 +141,16 @@ def approve_candidate_as_new_dish(candidate, reviewer, corrected_payload=None, n
                 reviewer_note="Alternative name accepted by a human reviewer.",
             )
             claim.evidence.add(excerpt)
+
+        if location_name:
+            location = Location.objects.filter(name=location_name).first()
+            if location:
+                DishLocation.objects.create(
+                    dish=dish,
+                    location=location,
+                    relationship=location_relationship,
+                    review_status=ReviewStatus.REVIEWED,
+                )
 
         if description:
             claim = DishClaim.objects.create(
@@ -202,7 +225,7 @@ def public_dishes(query="", location="", category=""):
     return queryset.distinct()
 
 
-def serialize_dish(dish):
+def serialize_dish(dish, include_evidence=True):
     names = list(dish.names.all())
     location_links = list(dish.locations.all())
     claims = list(dish.claims.all())
@@ -238,6 +261,13 @@ def serialize_dish(dish):
         ),
         "description": dish.description,
         "category": dish.category.name if dish.category else None,
+        "image": {
+            "url": dish.image_url,
+            "caption": dish.image_caption,
+            "credit": dish.image_credit,
+            "license": dish.image_license,
+            "source_url": dish.image_source_url,
+        } if dish.image_url else None,
         "review_status": "reviewed",
         "alternative_names": [
             {
@@ -255,5 +285,5 @@ def serialize_dish(dish):
             }
             for link in location_links
         ],
-        "evidence": evidence,
+        "evidence": evidence if include_evidence else [],
     }

@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin, messages
 
 from .forms import CandidateRecordReviewForm
@@ -19,8 +20,27 @@ from .models import (
 from .services import approve_candidate_as_new_dish, normalize_name
 
 
+class DishNameInlineForm(forms.ModelForm):
+    class Meta:
+        model = DishName
+        fields = ("name", "language_code", "name_type", "review_status")
+
+    def clean_name(self):
+        name = self.cleaned_data["name"].strip()
+        self.instance.normalized_name = normalize_name(name)
+        return name
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.normalized_name = normalize_name(self.cleaned_data["name"])
+        if commit:
+            instance.save()
+        return instance
+
+
 class DishNameInline(admin.TabularInline):
     model = DishName
+    form = DishNameInlineForm
     extra = 0
 
 
@@ -41,7 +61,14 @@ class DishAdmin(admin.ModelAdmin):
     list_filter = ("publication_status", "category")
     search_fields = ("canonical_name", "names__name", "description", "wikidata_id")
     prepopulated_fields = {"slug": ("canonical_name",)}
+    fieldsets = (
+        (None, {"fields": ("canonical_name", "slug", "description", "category", "publication_status", "wikidata_id")}),
+        ("Image", {"fields": ("image_url", "image_caption", "image_credit", "image_license", "image_source_url")}),
+    )
     inlines = (DishNameInline, DishLocationInline)
+
+    class Media:
+        css = {"all": ("admin/error-visibility.css",)}
 
 
 class CandidateMatchInline(admin.TabularInline):
@@ -123,6 +150,13 @@ class CandidateRecordAdmin(admin.ModelAdmin):
                     "description",
                     "category",
                     "alternative_names",
+                    "location",
+                    "location_relationship",
+                    "image_url",
+                    "image_caption",
+                    "image_credit",
+                    "image_license",
+                    "image_source_url",
                     "processing_status",
                 )
             },
@@ -157,6 +191,9 @@ class CandidateRecordAdmin(admin.ModelAdmin):
     )
     actions = (move_to_review, request_more_evidence, approve_as_new_dish)
     inlines = (CandidateMatchInline,)
+
+    class Media:
+        css = {"all": ("admin/error-visibility.css",)}
 
 
 @admin.register(Source)

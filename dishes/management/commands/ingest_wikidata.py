@@ -1,6 +1,7 @@
 import json
 import re
 from urllib.request import Request, urlopen
+from urllib.parse import quote
 
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
@@ -9,7 +10,7 @@ from dishes.models import CandidateRecord, EvidenceExcerpt, Source
 
 
 QID_PATTERN = re.compile(r"^Q\d+$", re.IGNORECASE)
-TRACKED_PROPERTIES = ("P31", "P495", "P2341", "P1705", "P2012")
+TRACKED_PROPERTIES = ("P18", "P31", "P495", "P2341", "P1705", "P2012")
 
 
 def fetch_entity(qid):
@@ -76,7 +77,31 @@ def selected_claims(entity):
     return claims
 
 
-def register_entity(entity):
+def image_from_entity(entity, qid, label):
+    for statement in entity.get("claims", {}).get("P18", []):
+        if statement.get("rank") == "deprecated":
+            continue
+        filename = snak_value(statement.get("mainsnak", {}))
+        if not filename:
+            continue
+        filename = str(filename)
+        commons_url = "https://commons.wikimedia.org/wiki/File:" + quote(
+            filename.replace(" ", "_")
+        )
+        image_url = "https://commons.wikimedia.org/wiki/Special:FilePath/" + quote(
+            filename.replace(" ", "_")
+        )
+        return {
+            "url": image_url,
+            "caption": f"{label} — image from Wikimedia Commons",
+            "credit": "Wikimedia Commons",
+            "license": "Verify licence before publication",
+            "source_url": commons_url,
+        }
+    return {}
+
+
+def register_entity(entity, refresh_existing=False):
     """Persist one API entity as a review-only candidate."""
     qid = str(entity.get("id") or "").upper().strip()
     if not QID_PATTERN.fullmatch(qid):
@@ -97,6 +122,7 @@ def register_entity(entity):
     wikipedia_title = entity.get("sitelinks", {}).get("enwiki", {}).get("title")
     claims = selected_claims(entity)
     entity_url = f"https://www.wikidata.org/wiki/{qid}"
+    image = image_from_entity(entity, qid, label)
 
     source, _ = Source.objects.get_or_create(
         stable_identifier=qid,
@@ -121,6 +147,7 @@ def register_entity(entity):
         "aliases": aliases,
         "english_wikipedia_title": wikipedia_title,
         "selected_claims": claims,
+        "image": image,
     }
     excerpt, _ = EvidenceExcerpt.objects.get_or_create(
         source=source,
@@ -140,6 +167,13 @@ def register_entity(entity):
         .first()
     )
     if existing:
+        if refresh_existing and existing.processing_status != CandidateRecord.ProcessingStatus.DECIDED:
+            payload = dict(existing.extracted_payload or {})
+            if image and not (payload.get("image") or {}).get("url"):
+                payload["image"] = image
+                existing.extracted_payload = payload
+                existing.submitted_text = excerpt.text
+                existing.save(update_fields=["extracted_payload", "submitted_text", "updated_at"])
         return existing, False, label
 
     candidate = CandidateRecord.objects.create(
@@ -171,7 +205,8 @@ def register_entity(entity):
                 ],
                 "wikidata_id": qid,
                 "english_wikipedia_title": wikipedia_title,
-                "selected_claims": claims,
+            "selected_claims": claims,
+            "image": image,
         },
         processing_status=CandidateRecord.ProcessingStatus.EXTRACTED,
     )
@@ -187,6 +222,11 @@ class Command(BaseCommand):
             nargs="+",
             help="One or more exact Wikidata entity IDs, for example Q12345",
         )
+        parser.add_argument(
+            "--refresh-existing",
+            action="store_true",
+            help="Refresh undecided candidates with newly available source data, including images.",
+        )
 
     def handle(self, *args, **options):
         qids = [qid.upper().strip() for qid in options["qids"]]
@@ -195,7 +235,9 @@ class Command(BaseCommand):
                 raise CommandError("Provide exact Wikidata QIDs such as Q12345.")
 
         for qid in qids:
-            candidate, created, label = register_entity(fetch_entity(qid))
+            candidate, created, label = register_entity(
+                fetch_entity(qid), refresh_existing=options["refresh_existing"]
+            )
             state = "registered" if created else "already registered"
             self.stdout.write(self.style.SUCCESS(f"Wikidata candidate {state}."))
             self.stdout.write(f"Candidate: {candidate.id}")
